@@ -1,0 +1,8 @@
+# Ignore PyCharm/IDEA project files
+.idea/
+
+# Ignore Python cache files
+__pycache__/
+
+# Ignore instructions directory
+instructions/
