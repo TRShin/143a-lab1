@@ -38,16 +38,23 @@ class Kernel:
     # DO NOT rename or delete this method. DO NOT change its arguments.
     def __init__(self, scheduling_algorithm: str, logger):
         self.scheduling_algorithm = scheduling_algorithm
+        self.logger = logger
+
+        # Process Management
         self.ready_queue = deque()
         self.waiting_queue = deque()
         self.rr_queue = deque()
         self.idle_pcb = PCB(0, float('inf'))
         self.running = self.idle_pcb
-        self.logger = logger
+
+        # Time Management
         self.time_elapsed = 0
         self.process_start_time = 0
         self.time_quantum = 40
 
+        # Synchronization
+        self.semaphores = {} # semaphore_id -> {"value": value, "queue": deque[PCB]}
+        self.mutexes = {}
     # This method is triggered every time a new process has arrived.
     # new_process is this process's PID.
     # priority is the priority of new_process.
@@ -129,16 +136,48 @@ class Kernel:
     # This method is triggered when the currently running process requests to initialize a new semaphore.
     # DO NOT rename or delete this method. DO NOT change its arguments.
     def syscall_init_semaphore(self, semaphore_id: int, initial_value: int):
-        return
+        self.semaphores[semaphore_id] = {
+            "value": initial_value,
+            "queue": deque()
+        }
+        self.logger.log(f"Semaphore {semaphore_id} initilized with value {initial_value}")
+    
 
     # This method is triggered when the currently running process calls p() on an existing semaphore.
     # DO NOT rename or delete this method. DO NOT change its arguments.
     def syscall_semaphore_p(self, semaphore_id: int) -> PID:
+        sem = self.semaphores[semaphore_id]
+        sem["value"] -= 1
+
+        if sem["value"] < 0:
+            sem["queue"].append(self.running)
+            self.logger.log(f"Process {self.running.pid} called p on semaphore {semaphore_id} and was blocked")
+            self.running = self.idle_pcb
+            self.choose_next_process()
+        else:
+            self.logger.log(f"Process {self.running.pid} called p on semaphore {semaphore_id}")
         return self.running.pid
 
     # This method is triggered when the currently running process calls v() on an existing semaphore.
     # DO NOT rename or delete this method. DO NOT change its arguments.
     def syscall_semaphore_v(self, semaphore_id: int) -> PID:
+        sem = self.semaphores[semaphore_id]
+        sem["value"] += 1
+        self.logger.log(f"Process {self.running.pid} called v on semaphore {semaphore_id}")
+
+        if sem["value"] <= 0 and sem["queue"]:
+            if self.scheduling_algorithm == "Priority":
+                next_process = min(sem["queue"], key=lambda pcb: (pcb.priority, pcb.pid))
+                sem["queue"].remove(next_process)
+            else:
+                next_process = sem["queue"].popleft()
+
+            self.logger.log(f"Process {next_process.pid} unblocked from semaphore {semaphore_id}")
+
+            if self.scheduling_algorithm == "RR":
+                self.rr_queue.append(next_process)
+            else:
+                self.ready_queue.append(next_process)
         return self.running.pid
 
     # This method is triggered when the currently running process requests to initialize a new mutex.
