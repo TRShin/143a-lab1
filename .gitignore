@@ -11,4 +11,4 @@ instructions/
 kernel-proj-1/
 
 # Ignore test output
-testoutput/
+/testoutput/
