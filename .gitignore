@@ -6,3 +6,9 @@ __pycache__/
 
 # Ignore instructions directory
 instructions/
+
+# Ignore project 1 kernel implementation
+kernel-proj-1/
+
+# Ignore test output
+testoutput/

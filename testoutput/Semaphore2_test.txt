@@ -1,0 +1,77 @@
+0.000ms : Foreground process 1 arrived with priority 35
+0.000ms : Context switching to pid: 1
+
+0.030ms : Semaphore 0 initilized with value 3
+0.030ms # Semaphore 0 initilized with value 3
+0.030ms : Process 1 called p on semaphore 0
+0.030ms # Process 1 called p on semaphore 0
+0.030ms : Foreground process 2 arrived with priority 40
+
+0.034ms : Process 1 called p on semaphore 0
+0.034ms # Process 1 called p on semaphore 0
+
+0.057ms : Process 1 called v on semaphore 0
+0.057ms # Process 1 called v on semaphore 0
+
+0.100ms : Process 1 called p on semaphore 0
+0.100ms # Process 1 called p on semaphore 0
+
+0.110ms : Process 1 set priority to 50
+0.110ms : Context switching to pid: 2
+
+0.123ms : Process 2 called p on semaphore 0
+0.123ms # Process 2 called p on semaphore 0
+
+0.132ms : Process 2 called p on semaphore 0
+0.132ms # Process 2 called p on semaphore 0 and was blocked
+0.132ms : Context switching to pid: 1
+
+0.142ms : Process 1 called v on semaphore 0
+0.142ms # Process 1 called v on semaphore 0
+0.142ms # Process 2 unblocked from semaphore 0
+
+0.150ms : Foreground process 3 arrived with priority 2
+0.150ms : Context switching to pid: 3
+
+0.180ms : Process 3 called p on semaphore 0
+0.180ms # Process 3 called p on semaphore 0 and was blocked
+0.180ms : Context switching to pid: 2
+
+0.200ms : Foreground process 4 arrived with priority 2
+0.200ms : Context switching to pid: 4
+
+0.230ms : Process 4 called p on semaphore 0
+0.230ms # Process 4 called p on semaphore 0 and was blocked
+0.230ms : Context switching to pid: 2
+
+0.233ms : Process 2 called p on semaphore 0
+0.233ms # Process 2 called p on semaphore 0 and was blocked
+0.233ms : Context switching to pid: 1
+
+0.625ms : Process 1 called v on semaphore 0
+0.625ms # Process 1 called v on semaphore 0
+0.625ms # Process 3 unblocked from semaphore 0
+
+0.805ms : Process 1 has finished execution and is exiting
+0.805ms : Context switching to pid: 3
+
+0.825ms : Process 3 called v on semaphore 0
+0.825ms # Process 3 called v on semaphore 0
+0.825ms # Process 4 unblocked from semaphore 0
+
+1.075ms : Process 3 has finished execution and is exiting
+1.075ms : Context switching to pid: 4
+
+1.095ms : Process 4 called v on semaphore 0
+1.095ms # Process 4 called v on semaphore 0
+1.095ms # Process 2 unblocked from semaphore 0
+
+1.345ms : Process 4 has finished execution and is exiting
+1.345ms : Context switching to pid: 2
+
+1.350ms : Process 2 called v on semaphore 0
+1.350ms # Process 2 called v on semaphore 0
+
+1.360ms : Process 2 has finished execution and is exiting
+1.360ms : Context switching to pid: 0
+
