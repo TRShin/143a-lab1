@@ -87,10 +87,12 @@ class Kernel:
         self.rr_ready_queue = deque()
         self.active_queue = FOREGROUND
         self.active_queue_num_ticks = 0
-        self.free_holes = [(RESERVED_KERNEL_BYTES, memory_size - RESERVED_KERNEL_BYTES)] # List of free memory holes (size, start_address)
         self.mmu = mmu
-        self.mmu.kernel = self
+        self.mmu.kernel = self      
+        self.memory_size = memory_size
         
+        self.free_holes = [(RESERVED_KERNEL_BYTES, memory_size - RESERVED_KERNEL_BYTES)] # List of free memory holes (start_address, size)
+        self.allocations = dict() # (pid -> (start_address, size))
 
     # This function is triggered every time a new process has arrived.
     # new_process is this process's PID.
@@ -271,7 +273,6 @@ class Kernel:
         self.semaphore_p(self.mutexes[mutex_id].semaphore)
         return self.running.pid 
 
-
     # This method is triggered when the currently running process calls unlock() on an existing mutex.
     # DO NOT rename or delete this method. DO NOT change its arguments.
     def syscall_mutex_unlock(self, mutex_id: int) -> PID:
@@ -293,6 +294,35 @@ class Kernel:
             self.choose_next_process()
         return self.running.pid 
     
+    def _alloc_best_fit(self, needed: int) -> tuple[int, int] | None:
+        """
+        Find the smallest hole ≥ needed.
+        Carve out (base, needed), shrink or remove that hole,
+        and return (base, needed). If no hole fits, return None.
+        """
+        # sentinel: no hole chosen yet
+        best_idx = -1
+        # start with something larger than any possible hole
+        best_size = self.memory_size + 1
+
+        for i, (start, size) in enumerate(self.free_holes):
+            # only consider holes big enough
+            if size >= needed and size < best_size:
+                best_idx, best_size = i, size
+
+        if best_idx < 0:
+            # no hole large enough
+            return None
+
+        # carve out the chosen hole
+        start, size = self.free_holes.pop(best_idx)
+        allocated = (start, needed)
+        leftover = size - needed
+        if leftover > 0:
+            # put the remainder back as a hole
+            self.free_holes.append((start + needed, leftover))
+
+        return allocated
 
 def exceeded_quantum(pcb: PCB) -> bool:
     if pcb.num_quantum_ticks >= RR_QUANTUM_TICKS:
