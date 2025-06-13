@@ -286,21 +286,6 @@ class Kernel:
             self.choose_next_process()
         return self.running.pid 
     
-# This class represents the MMU of the simulation.
-# The simulator will create an instance of this object and use it to translate memory accesses.
-# DO NOT modify the name of this class or remove it.
-class MMU:
-    # Called before the simulation begins (even before kernel __init__).
-    # Use this function to initilize any variables you need throughout the simulation.
-    # DO NOT rename or delete this method. DO NOT change its arguments.
-    def __init__(self, logger):
-        pass
-
-    # Translate the virtual address to its physical address.
-    # If it is not a valid address for the given process, return None which will cause a segmentation fault.
-    # DO NOT rename or delete this method. DO NOT change its arguments.
-    def translate(self, address: int, pid: PID) -> int | None:
-        return None
 
 def exceeded_quantum(pcb: PCB) -> bool:
     if pcb.num_quantum_ticks >= RR_QUANTUM_TICKS:
@@ -309,7 +294,7 @@ def exceeded_quantum(pcb: PCB) -> bool:
     else:
         return False
     
-def pop_min_priority(pcbs: list[PCB]) -> PCB:
+def pop_min_priority(pcbs: deque[PCB]) -> PCB:
     min_index = 0
     for i in range(1, len(pcbs)):
         process = pcbs[i]
@@ -321,7 +306,7 @@ def pop_min_priority(pcbs: list[PCB]) -> PCB:
     del pcbs[min_index]
     return popped
 
-def pop_min_pid(pcbs: list[PCB]):
+def pop_min_pid(pcbs: deque[PCB]):
     lowest_pid_i = 0
     for i in range(1, len(pcbs)):
         if pcbs[i].pid < pcbs[lowest_pid_i].pid:
@@ -329,3 +314,19 @@ def pop_min_pid(pcbs: list[PCB]):
     popped = pcbs[lowest_pid_i]
     del pcbs[lowest_pid_i]
     return popped
+
+# This class represents the MMU of the simulation.
+# The simulator will create an instance of this object and use it to translate memory accesses.
+# DO NOT modify the name of this class or remove it.
+class MMU:
+    # Called before the simulation begins (even before kernel __init__).
+    # Use this function to initilize any variables you need throughout the simulation. 
+    # DO NOT rename or delete this method. DO NOT change its arguments.
+    def __init__(self, logger):
+        pass
+
+    # Translate the virtual address to its physical address.
+    # If it is not a valid address for the given process, return None which will cause a segmentation fault.
+    # DO NOT rename or delete this method. DO NOT change its arguments.
+    def translate(self, address: int, pid: PID) -> int | None:
+        return None
