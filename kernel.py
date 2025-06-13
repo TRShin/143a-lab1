@@ -12,6 +12,9 @@ PID = int
 BACKGROUND: str = "Background"
 FOREGROUND: str = "Foreground"
 
+RESERVED_KERNEL_BYTES = 10 * 1024  * 1024  # 10 MB reserved for kernel memory
+VIRTUAL_BASE = 0x2000_0000 
+
 # This class represents the PCB of processes.
 # It is only here for your convinience and can be modified however you see fit.
 class PCB:
@@ -84,6 +87,10 @@ class Kernel:
         self.rr_ready_queue = deque()
         self.active_queue = FOREGROUND
         self.active_queue_num_ticks = 0
+        self.free_holes = [(RESERVED_KERNEL_BYTES, memory_size - RESERVED_KERNEL_BYTES)] # List of free memory holes (size, start_address)
+        self.mmu = mmu
+        self.mmu.kernel = self
+        
 
     # This function is triggered every time a new process has arrived.
     # new_process is this process's PID.
@@ -319,6 +326,9 @@ def pop_min_pid(pcbs: deque[PCB]):
 # The simulator will create an instance of this object and use it to translate memory accesses.
 # DO NOT modify the name of this class or remove it.
 class MMU:
+    
+    kernel: Kernel
+    
     # Called before the simulation begins (even before kernel __init__).
     # Use this function to initilize any variables you need throughout the simulation. 
     # DO NOT rename or delete this method. DO NOT change its arguments.
