@@ -99,6 +99,14 @@ class Kernel:
     # priority is the priority of new_process.
     # DO NOT rename or delete this method. DO NOT change its arguments.
     def new_process_arrived(self, new_process: PID, priority: int, process_type: str, memory_needed: int) -> PID:
+        slot = self._alloc_best_fit(memory_needed)
+        if slot is None:
+            self.logger.log(f"Process {new_process} could not be allocated memory of size {memory_needed}.")
+            return -1
+        
+        phys_base, phys_size = slot
+        self.allocations[new_process] = (phys_base, phys_size)
+        
         self.ready_queue.append(PCB(new_process, priority, process_type))
         
         # Neither queue was active, so when a process arrives, it is the start of a new queue
@@ -300,26 +308,20 @@ class Kernel:
         Carve out (base, needed), shrink or remove that hole,
         and return (base, needed). If no hole fits, return None.
         """
-        # sentinel: no hole chosen yet
-        best_idx = -1
-        # start with something larger than any possible hole
-        best_size = self.memory_size + 1
+        best_idx = -1 
+        best_size = self.memory_size + 1 # Start with a size larger than any possible hole
 
         for i, (start, size) in enumerate(self.free_holes):
-            # only consider holes big enough
             if size >= needed and size < best_size:
                 best_idx, best_size = i, size
 
         if best_idx < 0:
-            # no hole large enough
             return None
 
-        # carve out the chosen hole
         start, size = self.free_holes.pop(best_idx)
         allocated = (start, needed)
         leftover = size - needed
         if leftover > 0:
-            # put the remainder back as a hole
             self.free_holes.append((start + needed, leftover))
 
         return allocated
