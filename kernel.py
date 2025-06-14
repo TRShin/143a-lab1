@@ -12,7 +12,7 @@ PID = int
 BACKGROUND: str = "Background"
 FOREGROUND: str = "Foreground"
 
-RESERVED_KERNEL_BYTES = 10 * 1024  * 1024  # 10 MB reserved for kernel memory
+RESERVED_KERNEL = 10 * 1024  * 1024  # 10 MB reserved for kernel memory
 VIRTUAL_BASE = 0x2000_0000 
 
 # This class represents the PCB of processes.
@@ -91,7 +91,7 @@ class Kernel:
         self.mmu.kernel = self      
         self.memory_size = memory_size
         
-        self.free_holes = [(RESERVED_KERNEL_BYTES, memory_size - RESERVED_KERNEL_BYTES)] # List of free memory holes (start_address, size)
+        self.free_holes = [(RESERVED_KERNEL, memory_size - RESERVED_KERNEL)] # List of free memory holes (start_address, size)
         self.allocations = dict() # (pid -> (start_address, size))
 
     # This function is triggered every time a new process has arrived.
@@ -118,6 +118,11 @@ class Kernel:
     # This function is triggered every time the current process performs an exit syscall.
     # DO NOT rename or delete this method. DO NOT change its arguments.
     def syscall_exit(self) -> PID:
+        pid = self.running.pid
+        if pid in self.allocations:
+            b, s = self.allocations.pop(pid)
+            self._free_and_coalesce(b, s)
+        
         self.running = self.idle_pcb
         self.choose_next_process()
         return self.running.pid
@@ -302,12 +307,11 @@ class Kernel:
             self.choose_next_process()
         return self.running.pid 
     
+    # Find the smallest hole ≥ needed.
+    # Carve out (base, needed), shrink or remove that hole,
+    # and return (base, needed). If no hole fits, return None.
     def _alloc_best_fit(self, needed: int) -> tuple[int, int] | None:
-        """
-        Find the smallest hole ≥ needed.
-        Carve out (base, needed), shrink or remove that hole,
-        and return (base, needed). If no hole fits, return None.
-        """
+
         best_idx = -1 
         best_size = self.memory_size + 1 # Start with a size larger than any possible hole
 
@@ -325,6 +329,26 @@ class Kernel:
             self.free_holes.append((start + needed, leftover))
 
         return allocated
+    
+    # Return (base, size) to free_holes, then sort+merge any adjacent holes.
+    def _free_and_coalesce(self, base: int, size: int):
+       
+        self.free_holes.append((base, size))
+        self.free_holes.sort(key=lambda h: h[0])
+
+        # coalesce adjacent runs
+        merged = []
+        cur_base, cur_size = self.free_holes[0]
+        for nxt_base, nxt_size in self.free_holes[1:]:
+            if nxt_base == cur_base + cur_size:
+                # contiguous → extend
+                cur_size += nxt_size
+            else:
+                merged.append((cur_base, cur_size))
+                cur_base, cur_size = nxt_base, nxt_size
+        merged.append((cur_base, cur_size))
+
+        self.free_holes = merged
 
 def exceeded_quantum(pcb: PCB) -> bool:
     if pcb.num_quantum_ticks >= RR_QUANTUM_TICKS:
