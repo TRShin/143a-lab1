@@ -395,4 +395,11 @@ class MMU:
     # If it is not a valid address for the given process, return None which will cause a segmentation fault.
     # DO NOT rename or delete this method. DO NOT change its arguments.
     def translate(self, address: int, pid: PID) -> int | None:
-        return None
+        allocs = self.kernel.allocations
+        if pid not in allocs:
+            return None
+        base, size = allocs[pid]
+        offset = address - VIRTUAL_BASE
+        if offset < 0 or offset >= size:
+            return None
+        return base + offset
